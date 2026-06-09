@@ -38,7 +38,9 @@
                 <img src="{{ message.image_url }}" alt="配图" onclick="openLightbox(this.src)">
             </div>
             {% endif %}
-            <div class="message-content">{{ message.content }}</div>
+            <div class="message-content">
+                {{ message.content[:200] }}{% if message.content|length > 200 %}…{% endif %}
+            </div>
             <div class="message-footer">
                 <button class="like-btn {{ 'liked' if message.is_liked_by(current_user) else '' }}"
                         onclick="toggleLike({{ message.id }}, this)">
@@ -46,7 +48,8 @@
                     <span class="count">{{ message.like_count() }}</span>
                 </button>
                 <a href="{{ url_for('message_detail', message_id=message.id) }}" class="detail-link">
-                    💬 {{ message.reply_count() }} · 🔗 详情
+                    💬 {{ message.reply_count() }}
+                    {% if message.content|length > 200 %} · 📖 阅读全文{% else %} · 🔗 详情{% endif %}
                 </a>
                 {% if current_user.is_authenticated and (message.user_id == current_user.id or current_user.is_admin) %}
                 <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}"
