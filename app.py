@@ -227,19 +227,23 @@ def profile():
         if avatar_file and avatar_file.filename:
             ext = avatar_file.filename.rsplit('.', 1)[-1].lower() if '.' in avatar_file.filename else ''
             if ext in ALLOWED_EXTENSIONS:
-                filename = secure_filename(f'avatar_{current_user.id}_{datetime.now().strftime("%Y%m%d%H%M%S")}.{ext}')
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                avatar_file.save(filepath)
-                # 删除旧头像文件
-                if current_user.avatar_url:
-                    old_path = os.path.join(app.config['UPLOAD_FOLDER'],
-                                            current_user.avatar_url.rsplit('/', 1)[-1])
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-                current_user.avatar_url = url_for('uploaded_file', filename=filename)
+                try:
+                    filename = secure_filename(f'avatar_{current_user.id}_{datetime.now().strftime("%Y%m%d%H%M%S")}.{ext}')
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    avatar_file.save(filepath)
+                    # 删除旧头像文件
+                    if current_user.avatar_url:
+                        old_path = os.path.join(app.config['UPLOAD_FOLDER'],
+                                                current_user.avatar_url.rsplit('/', 1)[-1])
+                        if os.path.exists(old_path):
+                            os.remove(old_path)
+                    current_user.avatar_url = url_for('uploaded_file', filename=filename)
+                except Exception:
+                    flash('头像上传失败，请重试')
+                    return redirect(url_for('profile'))
             else:
                 flash('不支持的头像格式，请上传 JPG/PNG/GIF/WebP 图片')
-                return render_template('profile.html')
+                return redirect(url_for('profile'))
 
         db.session.commit()
         flash('个人信息已更新')
