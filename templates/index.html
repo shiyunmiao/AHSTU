@@ -15,9 +15,9 @@
     {% if messages %}
     <div class="message-wall">
         {% for message in messages %}
-        <div class="message-card">
+        <div class="message-card" onclick="location.href='{{ url_for('message_detail', message_id=message.id) }}'" style="cursor: pointer;">
             <div class="message-header">
-                <div class="message-author">
+                <div class="message-author" onclick="event.stopPropagation();">
                     {% if message.author.avatar_url %}
                     <img src="{{ message.author.avatar_url }}" alt="头像" class="avatar-img">
                     {% else %}
@@ -34,22 +34,19 @@
             </div>
             {% if message.title %}<div class="message-title">{{ message.title }}</div>{% endif %}
             {% if message.image_url %}
-            <div class="message-image">
+            <div class="message-image" onclick="event.stopPropagation();">
                 <img src="{{ message.image_url }}" alt="配图" onclick="openLightbox(this.src)">
             </div>
             {% endif %}
-            <div class="message-content">
-                {{ message.content[:200] }}{% if message.content|length > 200 %}…{% endif %}
-            </div>
-            <div class="message-footer">
+            <div class="message-content">{{ message.content[:300] }}{% if message.content|length > 300 %}…{% endif %}</div>
+            <div class="message-footer" onclick="event.stopPropagation();">
                 <button class="like-btn {{ 'liked' if message.is_liked_by(current_user) else '' }}"
                         onclick="toggleLike({{ message.id }}, this)">
                     <span class="heart">{{ '❤️' if message.is_liked_by(current_user) else '🤍' }}</span>
                     <span class="count">{{ message.like_count() }}</span>
                 </button>
                 <a href="{{ url_for('message_detail', message_id=message.id) }}" class="detail-link">
-                    💬 {{ message.reply_count() }}
-                    {% if message.content|length > 200 %} · 📖 阅读全文{% else %} · 🔗 详情{% endif %}
+                    💬 {{ message.reply_count() }} · 📖 阅读全文
                 </a>
                 {% if current_user.is_authenticated and (message.user_id == current_user.id or current_user.is_admin) %}
                 <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}"
