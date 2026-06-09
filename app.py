@@ -1,7 +1,8 @@
 # app.py - Flask 主程序
 from flask import (Flask, render_template, request, redirect, url_for,
-                   flash, jsonify, send_from_directory)
+                   flash, jsonify, send_from_directory, session)
 import os
+import random
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from flask_login import (LoginManager, login_user, logout_user,
@@ -108,35 +109,41 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
+    # 生成验证码
+    num1 = random.randint(1, 20)
+    num2 = random.randint(1, 10)
+    session['captcha_answer'] = num1 + num2
+    captcha_text = f'{num1} + {num2} = ?'
+
     if request.method == 'POST':
         student_id = request.form.get('student_id', '').strip()
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
+        nickname = request.form.get('nickname', '').strip()
         password = request.form.get('password', '')
         confirm = request.form.get('confirm', '')
+        captcha_input = request.form.get('captcha', '').strip()
 
-        if not all([student_id, username, email, password, confirm]):
+        if not all([student_id, nickname, password, confirm]):
             flash('所有字段都是必填的')
-            return render_template('register.html')
+            return render_template('register.html', captcha_text=captcha_text)
         if password != confirm:
             flash('两次密码输入不一致')
-            return render_template('register.html')
+            return render_template('register.html', captcha_text=captcha_text)
         if len(password) < 6:
             flash('密码长度至少6位')
-            return render_template('register.html')
+            return render_template('register.html', captcha_text=captcha_text)
+        if not captcha_input or not captcha_input.isdigit() or int(captcha_input) != session.get('captcha_answer'):
+            flash('验证码错误')
+            return render_template('register.html', captcha_text=captcha_text)
         if User.query.filter_by(student_id=student_id).first():
             flash('该学号已被注册')
-            return render_template('register.html')
-        if User.query.filter_by(username=username).first():
-            flash('该用户名已被使用')
-            return render_template('register.html')
-        if User.query.filter_by(email=email).first():
-            flash('该邮箱已被注册')
-            return render_template('register.html')
+            return render_template('register.html', captcha_text=captcha_text)
+        if User.query.filter_by(username=nickname).first():
+            flash('该昵称已被使用')
+            return render_template('register.html', captcha_text=captcha_text)
 
         user = User(
-            student_id=student_id, username=username, email=email,
-            password_hash=generate_password_hash(password), nickname=username
+            student_id=student_id, username=nickname, nickname=nickname,
+            password_hash=generate_password_hash(password)
         )
         db.session.add(user)
         db.session.commit()
@@ -144,7 +151,7 @@ def register():
         flash('注册成功！欢迎加入校园留言墙')
         return redirect(url_for('index'))
 
-    return render_template('register.html')
+    return render_template('register.html', captcha_text=captcha_text)
 
 
 # ─── 4.4 登录 ───
@@ -202,16 +209,14 @@ def profile():
     if request.method == 'POST':
         nickname = request.form.get('nickname', '').strip()
         email = request.form.get('email', '').strip()
-        if not email:
-            flash('邮箱不能为空')
-            return redirect(url_for('profile'))
         if nickname:
             current_user.nickname = nickname
-        existing = User.query.filter(User.email == email, User.id != current_user.id).first()
-        if existing:
-            flash('该邮箱已被其他用户使用')
-            return redirect(url_for('profile'))
-        current_user.email = email
+        if email:
+            existing = User.query.filter(User.email == email, User.id != current_user.id).first()
+            if existing:
+                flash('该邮箱已被其他用户使用')
+                return redirect(url_for('profile'))
+            current_user.email = email
         db.session.commit()
         flash('个人信息已更新')
         return redirect(url_for('profile'))
@@ -385,7 +390,6 @@ def init_db():
     if not User.query.filter_by(username='admin').first():
         admin = User(
             student_id='00000000', username='admin',
-            email='admin@school.edu',
             password_hash=generate_password_hash('admin123'),
             nickname='管理员', is_admin=True
         )

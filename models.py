@@ -13,7 +13,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.String(20), unique=True, nullable=False)   # 学号，唯一不可改
     username = db.Column(db.String(50), unique=True, nullable=False)     # 用户名
-    email = db.Column(db.String(100), unique=True, nullable=False)       # 邮箱
+    email = db.Column(db.String(100), nullable=True)                      # 邮箱（注册时不再必填）
     password_hash = db.Column(db.String(255), nullable=False)            # 密码哈希
     nickname = db.Column(db.String(50), default='')                      # 昵称
     avatar_url = db.Column(db.String(255), default='')                   # 头像
