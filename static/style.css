@@ -23,19 +23,6 @@
     --nav-border: rgba(0, 0, 0, 0.06);
 }
 
-/* 页面背景装饰 — 细线网格（极简质感） */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image:
-        linear-gradient(var(--card-border) 1px, transparent 1px),
-        linear-gradient(90deg, var(--card-border) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: 0;
-}
-
 /* ── 暗色主题变量 ── */
 [data-theme="dark"] {
     --bg: #000000;
@@ -68,18 +55,15 @@ body {
 
 .container {
     max-width: 720px;
-    margin: 1.5rem auto;
+    margin: 2.5rem auto;
     padding: 0 1.2rem;
-    min-height: calc(100vh - 120px);
-    position: relative;
-    z-index: 1;
 }
 
 /* =============================================
    导航栏（极简）
    ============================================= */
 .navbar {
-    background: rgba(255,255,255,0.85);
+    background: var(--card-bg);
     border-bottom: 1px solid var(--nav-border);
     padding: 0 1.5rem;
     height: 52px;
@@ -91,10 +75,6 @@ body {
     align-items: center;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-}
-
-[data-theme="dark"] .navbar {
-    background: rgba(0,0,0,0.85);
 }
 
 .navbar-brand {
@@ -242,14 +222,13 @@ body {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--radius);
-    padding: 1.1rem 1.25rem;
-    margin-bottom: 0.6rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.75rem;
     transition: all 0.2s ease;
 }
 
 .message-card:hover {
-    box-shadow: var(--shadow);
-    border-color: rgba(0, 113, 227, 0.15);
+    box-shadow: var(--shadow-hover);
 }
 
 /* 置顶留言 */
@@ -261,13 +240,13 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
 }
 
 .message-author {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
 }
 
 /* 头像 */
@@ -338,8 +317,8 @@ body {
 /* 留言正文 */
 .message-content {
     font-size: 0.9rem;
-    line-height: 1.6;
-    margin-bottom: 0.6rem;
+    line-height: 1.7;
+    margin-bottom: 0.8rem;
     color: var(--text-secondary);
     word-break: break-word;
 }
@@ -785,10 +764,13 @@ body {
    底部分隔
    ============================================= */
 .container::after {
-    content: '';
+    content: '校园留言墙';
     display: block;
     text-align: center;
-    padding: 1rem 0 0.5rem;
+    padding: 2rem 0 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    opacity: 0.4;
 }
 
 /* =============================================
