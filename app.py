@@ -398,9 +398,18 @@ def init_db():
         print('✓ 默认管理员已创建（admin / admin123）')
 
 
-# ─── 生产启动时自动创建表（gunicorn 也会执行） ───
+# ─── 生产启动时自动创建表 + 默认管理员（gunicorn 也会执行） ───
 with app.app_context():
     db.create_all()
+    if not User.query.filter_by(username='admin').first():
+        admin = User(
+            student_id='00000000', username='admin',
+            password_hash=generate_password_hash('admin123'),
+            nickname='管理员', is_admin=True
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print('✓ 默认管理员已创建（admin / admin123）')
 
 if __name__ == '__main__':
     # 本地开发用 debug 模式，部署时通过环境变量控制
