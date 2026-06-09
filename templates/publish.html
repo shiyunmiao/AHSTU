@@ -37,7 +37,7 @@
 
             <!-- 正文输入 -->
             <div class="publish-field">
-                <textarea name="content" placeholder="写下你想说的…" required
+                <textarea name="content" placeholder="写下你想说的…（选填，有标题或图片也可发布）"
                           oninput="updateCount(this)">{{ request.form.get('content', '') }}</textarea>
             </div>
 

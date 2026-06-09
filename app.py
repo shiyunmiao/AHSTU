@@ -83,7 +83,7 @@ def publish():
                 try:
                     file_data = file.read()
                     if len(file_data) > 5 * 1024 * 1024:  # 5MB 限制
-                        flash('图片不能超过 500KB')
+                        flash('图片不能超过 5MB')
                         return redirect(url_for('publish'))
                     b64 = base64.b64encode(file_data).decode('utf-8')
                     image_url = f'data:image/{ext};base64,{b64}'
@@ -94,8 +94,8 @@ def publish():
                 flash('不支持的文件格式，请上传图片文件')
                 return redirect(url_for('publish'))
 
-        if not content:
-            flash('留言内容不能为空')
+        if not any([title, content, image_url]):
+            flash('标题、正文、图片至少填一项')
             return redirect(url_for('publish'))
         if len(content) > 5000:
             flash('留言内容不能超过5000字')
