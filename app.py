@@ -77,24 +77,26 @@ def publish():
         # 处理文件上传（如果用户选了文件）
         file = request.files.get('image_file')
         if file and file.filename:
-            # 检查文件类型
             ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
             if ext in ALLOWED_EXTENSIONS:
-                # 用安全文件名保存
-                filename = secure_filename(f'{datetime.now().strftime("%Y%m%d%H%M%S")}_{file.filename}')
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(filepath)
-                image_url = url_for('uploaded_file', filename=filename)
+                try:
+                    filename = secure_filename(f'{datetime.now().strftime("%Y%m%d%H%M%S")}_{file.filename}')
+                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(filepath)
+                    image_url = url_for('uploaded_file', filename=filename)
+                except Exception:
+                    flash('图片上传失败，请重试')
+                    return redirect(url_for('publish'))
             else:
                 flash('不支持的文件格式，请上传图片文件')
-                return render_template('publish.html')
+                return redirect(url_for('publish'))
 
         if not content:
             flash('留言内容不能为空')
-            return render_template('publish.html')
+            return redirect(url_for('publish'))
         if len(content) > 5000:
             flash('留言内容不能超过5000字')
-            return render_template('publish.html')
+            return redirect(url_for('publish'))
         message = Message(user_id=current_user.id, title=title, content=content, image_url=image_url)
         db.session.add(message)
         db.session.commit()
@@ -276,7 +278,7 @@ def change_password():
     return render_template('change_password.html')
 
 
-# ─── 4.9 留言详情页（查看留言 + 回复） ───
+# ─── 4.9 留言详情页（查看留言 + 回复，支持回复的回复） ───
 @app.route('/message/<int:message_id>', methods=['GET', 'POST'])
 def message_detail(message_id):
     message = Message.query.get_or_404(message_id)
@@ -286,10 +288,15 @@ def message_detail(message_id):
             flash('请先登录')
             return redirect(url_for('login', next=request.url))
         content = request.form.get('content', '').strip()
+        parent_id = request.form.get('parent_id', '').strip()
         if not content:
             flash('回复内容不能为空')
             return redirect(url_for('message_detail', message_id=message_id))
-        reply = Reply(message_id=message_id, user_id=current_user.id, content=content)
+        reply = Reply(
+            message_id=message_id, user_id=current_user.id,
+            content=content,
+            parent_id=int(parent_id) if parent_id and parent_id.isdigit() else None
+        )
         db.session.add(reply)
         db.session.commit()
         flash('回复成功')
@@ -441,6 +448,12 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()
+    # 迁移：replies 表添加 parent_id 列（支持嵌套回复）
+    try:
+        db.session.execute(sa_text('ALTER TABLE replies ADD COLUMN parent_id INTEGER REFERENCES replies(id)'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()  # 列可能已存在
     if not User.query.filter_by(username='admin').first():
         admin = User(
             student_id='00000000', username='admin',

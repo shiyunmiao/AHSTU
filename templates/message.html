@@ -46,7 +46,8 @@
 <div class="card" style="margin-top: 1rem;">
     <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">💬 回复（{{ message.reply_count() }}）</h3>
 
-    {% for reply in message.replies %}
+    {% set top_replies = message.replies.filter_by(parent_id=None).all() %}
+    {% for reply in top_replies %}
     <div style="padding: 0.8rem; background: var(--bg); border-radius: var(--radius-sm); margin-bottom: 0.5rem;
                 border: 1px solid var(--border);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -58,14 +59,60 @@
                     {{ reply.created_at.strftime('%m-%d %H:%M') }}
                 </span>
             </div>
-            {% if current_user.is_authenticated and (reply.user_id == current_user.id or current_user.is_admin) %}
-            <form method="POST" action="{{ url_for('delete_reply', reply_id=reply.id) }}"
-                  onsubmit="return confirm('确定删除这条回复吗？')">
-                <button type="submit" class="btn btn-danger btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">🗑️</button>
-            </form>
-            {% endif %}
+            <div style="display: flex; gap: 0.3rem; align-items: center;">
+                {% if current_user.is_authenticated %}
+                <button class="btn btn-outline btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;"
+                        onclick="toggleReplyForm({{ reply.id }})">💬 回复</button>
+                {% endif %}
+                {% if current_user.is_authenticated and (reply.user_id == current_user.id or current_user.is_admin) %}
+                <form method="POST" action="{{ url_for('delete_reply', reply_id=reply.id) }}"
+                      onsubmit="return confirm('确定删除这条回复吗？')">
+                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">🗑️</button>
+                </form>
+                {% endif %}
+            </div>
         </div>
         <div style="margin-top: 0.3rem; font-size: 0.9rem;">{{ reply.content }}</div>
+
+        {% if reply.author.username != reply.author.nickname %}
+        {% endif %}
+
+        <!-- 子回复 -->
+        {% for child in reply.children %}
+        <div style="margin: 0.5rem 0 0 1.5rem; padding: 0.6rem; background: var(--card-bg); border-radius: var(--radius-sm);
+                    border-left: 3px solid var(--primary-light);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-weight: 600; font-size: 0.8rem; color: var(--primary);">
+                        {{ child.author.nickname or child.author.username }}
+                    </span>
+                    <span style="font-size: 0.7rem; color: var(--text-light); margin-left: 0.3rem;">
+                        {{ child.created_at.strftime('%m-%d %H:%M') }}
+                    </span>
+                </div>
+                {% if current_user.is_authenticated and (child.user_id == current_user.id or current_user.is_admin) %}
+                <form method="POST" action="{{ url_for('delete_reply', reply_id=child.id) }}"
+                      onsubmit="return confirm('确定删除这条回复吗？')">
+                    <button type="submit" class="btn btn-danger btn-sm" style="padding: 0.15rem 0.4rem; font-size: 0.65rem;">🗑️</button>
+                </form>
+                {% endif %}
+            </div>
+            <div style="margin-top: 0.2rem; font-size: 0.85rem;">{{ child.content }}</div>
+        </div>
+        {% endfor %}
+
+        <!-- 行内回复表单（隐藏） -->
+        <div id="reply-form-{{ reply.id }}" style="display: none; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+            <form method="POST" action="{{ url_for('message_detail', message_id=message.id) }}" style="display: flex; gap: 0.3rem;">
+                <input type="hidden" name="parent_id" value="{{ reply.id }}">
+                <input type="text" name="content" placeholder="回复 @{{ reply.author.nickname or reply.author.username }}…" required
+                       style="flex: 1; padding: 0.5rem; border: 2px solid var(--border); border-radius: var(--radius-sm);
+                              background: var(--bg); color: var(--text); font-size: 0.85rem; font-family: inherit;">
+                <button type="submit" class="btn btn-primary btn-sm" style="font-size: 0.8rem;">回复</button>
+                <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.8rem;"
+                        onclick="toggleReplyForm({{ reply.id }})">取消</button>
+            </form>
+        </div>
     </div>
     {% else %}
     <p style="color: var(--text-light); text-align: center; padding: 1rem;">还没有回复，快来写第一条回复吧 💬</p>
@@ -84,6 +131,15 @@
     </p>
     {% endif %}
 </div>
+
+<script>
+    function toggleReplyForm(replyId) {
+        var form = document.getElementById('reply-form-' + replyId);
+        if (form) {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+</script>
 
 <div class="lightbox" id="lightbox" onclick="this.classList.remove('show')">
     <img id="lightboxImg" src="" alt="放大预览">

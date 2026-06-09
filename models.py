@@ -61,14 +61,18 @@ class Message(db.Model):
 
 
 class Reply(db.Model):
-    """回复表"""
+    """回复表（支持嵌套回复）"""
     __tablename__ = 'replies'
 
     id = db.Column(db.Integer, primary_key=True)
     message_id = db.Column(db.Integer, db.ForeignKey('messages.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('replies.id'), nullable=True)  # 回复的回复
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    children = db.relationship('Reply', backref=db.backref('parent', remote_side=[id]),
+                                lazy='dynamic', order_by='Reply.created_at')
 
 
 class Like(db.Model):
