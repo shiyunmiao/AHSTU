@@ -379,8 +379,9 @@ def search():
         else:
             messages = []
     else:
+        from sqlalchemy import or_
         messages = Message.query.filter(
-            Message.content.ilike(f'%{q}%')
+            or_(Message.content.ilike(f'%{q}%'), Message.title.ilike(f'%{q}%'))
         ).order_by(
             Message.created_at.desc()
         ).limit(50).all()
