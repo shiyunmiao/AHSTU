@@ -175,6 +175,34 @@
     document.addEventListener('DOMContentLoaded', function() {
         var ta = document.querySelector('.publish-card textarea');
         if (ta) updateCount(ta);
+
+        // ---- 发布防抖：5 秒内只能发一次 ----
+        var form = document.querySelector('.publish-card form');
+        var btn = form ? form.querySelector('button[type="submit"]') : null;
+        if (form && btn) {
+            var cooldown = false;
+            form.addEventListener('submit', function(e) {
+                if (cooldown) {
+                    e.preventDefault();
+                    return;
+                }
+                cooldown = true;
+                btn.disabled = true;
+                btn.textContent = '⏳ 请等待 5 秒…';
+                var seconds = 5;
+                var timer = setInterval(function() {
+                    seconds--;
+                    if (seconds > 0) {
+                        btn.textContent = '⏳ 请等待 ' + seconds + ' 秒…';
+                    } else {
+                        clearInterval(timer);
+                        cooldown = false;
+                        btn.disabled = false;
+                        btn.textContent = '📤 发布';
+                    }
+                }, 1000);
+            });
+        }
     });
 </script>
 {% endblock %}
