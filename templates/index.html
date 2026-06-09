@@ -34,8 +34,9 @@
             </div>
             {% if message.title %}<div class="message-title">{{ message.title }}</div>{% endif %}
             {% if message.image_url %}
-            <div class="message-image" onclick="event.stopPropagation();">
+            <div class="message-image message-image-thumb" onclick="event.stopPropagation();">
                 <img src="{{ message.image_url }}" alt="配图" onclick="openLightbox(this.src)">
+                <span class="image-expand-hint">🖼️ 点击查看大图</span>
             </div>
             {% endif %}
             <div class="message-content">{{ message.content[:300] }}{% if message.content|length > 300 %}…{% endif %}</div>

@@ -947,6 +947,42 @@ body::after {
     color: var(--text); line-height: 1.4;
 }
 .message-image {
+    margin-bottom: 0.8rem;
+}
+
+/* 首页缩略图：限制高度 + 点击查看提示 */
+.message-image-thumb {
+    position: relative;
+    max-height: 120px;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.message-image-thumb img {
+    max-height: 120px !important;
+    width: auto;
+    object-fit: cover;
+}
+
+.message-image-thumb .image-expand-hint {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.6));
+    color: white;
+    padding: 1.5rem 0.5rem 0.3rem;
+    font-size: 0.75rem;
+    text-align: center;
+    pointer-events: none;
+}
+
+.message-image-thumb:hover .image-expand-hint {
+    background: linear-gradient(transparent, rgba(0,0,0,0.75));
+}
+
+.message-image {
     margin-bottom: 0.8rem; border-radius: var(--radius-sm);
     overflow: hidden; max-width: 100%;
 }
