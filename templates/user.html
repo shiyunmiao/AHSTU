@@ -1,0 +1,75 @@
+<!-- user.html - 个人主页 -->
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.nickname or profile_user.username }} - 校园留言墙{% endblock %}
+{% block content %}
+<div class="card" style="text-align: center; padding: 2rem;">
+    <div class="avatar" style="width: 80px; height: 80px; font-size: 2rem; margin: 0 auto 1rem;">
+        {{ (profile_user.nickname or profile_user.username)[:1] }}
+    </div>
+    <h2>{{ profile_user.nickname or profile_user.username }}</h2>
+    <p style="color: var(--text-light);">
+        学号: {{ profile_user.student_id }} ·
+        加入于 {{ profile_user.created_at.strftime('%Y-%m-%d') }}
+    </p>
+    <p style="margin-top: 0.5rem;">
+        📝 {{ profile_user.messages.count() }} 条留言 ·
+        ❤️ {{ likes_received }} 个赞
+    </p>
+    {% if current_user.is_authenticated and current_user.id == profile_user.id %}
+        <a href="{{ url_for('profile') }}" class="btn btn-outline btn-sm" style="margin-top: 0.5rem;">⚙️ 编辑个人信息</a>
+    {% endif %}
+</div>
+
+<h3 style="margin-bottom: 1rem;">📝 {{ profile_user.nickname or profile_user.username }} 的留言</h3>
+{% for message in messages.items %}
+<div class="message-card">
+    <div class="message-header">
+        <span class="message-time">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+    </div>
+    {% if message.title %}<div class="message-title">{{ message.title }}</div>{% endif %}
+    {% if message.image_url %}
+    <div class="message-image">
+        <img src="{{ message.image_url }}" alt="配图" onclick="openLightbox(this.src)">
+    </div>
+    {% endif %}
+    <div class="message-content">{{ message.content }}</div>
+    <div class="message-footer">
+        <span>❤️ {{ message.like_count() }}</span>
+        <a href="{{ url_for('message_detail', message_id=message.id) }}" class="detail-link" style="margin-left: auto;">
+            💬 {{ message.reply_count() }} · 🔗 详情
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 2rem;">
+    <p style="color: var(--text-light);">还没有发布过留言</p>
+</div>
+{% endfor %}
+
+{% if messages.pages > 1 %}
+<div class="pagination">
+    {% if messages.has_prev %}
+        <a href="{{ url_for('user_profile', user_id=profile_user.id, page=messages.prev_num) }}" class="page-link">← 上一页</a>
+    {% endif %}
+    {% for page_num in messages.iter_pages() %}
+        {% if page_num %}
+            <a href="{{ url_for('user_profile', user_id=profile_user.id, page=page_num) }}"
+               class="page-link {{ 'active' if page_num == messages.page else '' }}">{{ page_num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if messages.has_next %}
+        <a href="{{ url_for('user_profile', user_id=profile_user.id, page=messages.next_num) }}" class="page-link">下一页 →</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('show')">
+    <img id="lightboxImg" src="" alt="放大预览">
+</div>
+<script>
+    function openLightbox(src) {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightbox').classList.add('show');
+    }
+</script>
+{% endblock %}

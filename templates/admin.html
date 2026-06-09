@@ -1,0 +1,73 @@
+<!-- admin.html - 管理后台 -->
+{% extends 'base.html' %}
+{% block title %}管理后台 - 校园留言墙{% endblock %}
+{% block content %}
+<h2 style="margin-bottom: 1.5rem;">🛠️ 管理后台</h2>
+
+<div class="admin-stats">
+    <div class="stat-card">
+        <div class="stat-number">{{ user_count }}</div>
+        <div class="stat-label">注册用户</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ message_count }}</div>
+        <div class="stat-label">留言总数</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ reply_count }}</div>
+        <div class="stat-label">回复总数</div>
+    </div>
+</div>
+
+<h3 style="margin-bottom: 1rem;">📝 所有留言</h3>
+{% for message in messages.items %}
+<div class="message-card" style="border-left: 4px solid {{ '#ffd700' if message.is_pinned else 'transparent' }};">
+    <div class="message-header">
+        <div class="message-author">
+            <div class="avatar" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                {{ (message.author.nickname or message.author.username)[:1] }}
+            </div>
+            <div>
+                <a href="{{ url_for('user_profile', user_id=message.author.id) }}">
+                    {{ message.author.nickname or message.author.username }}
+                </a>
+                <span style="font-size: 0.8rem; color: var(--text-light);">({{ message.author.student_id }})</span>
+                {% if message.is_pinned %}<span class="pin-badge">📌 已置顶</span>{% endif %}
+            </div>
+        </div>
+        <span class="message-time">{{ message.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+    </div>
+    <div class="message-content">{{ message.content[:150] }}{% if message.content|length > 150 %}...{% endif %}</div>
+    <div class="message-footer">
+        <span style="font-size: 0.85rem;">❤️ {{ message.like_count() }} · 💬 {{ message.reply_count() }}</span>
+        <div style="margin-left: auto; display: flex; gap: 0.3rem;">
+            <form method="POST" action="{{ url_for('admin_pin', message_id=message.id) }}"
+                  onsubmit="event.preventDefault(); fetch(this.action, {method:'POST'}).then(() => location.reload());">
+                <button type="submit" class="btn btn-outline btn-sm">{{ '取消置顶' if message.is_pinned else '置顶' }}</button>
+            </form>
+            <form method="POST" action="{{ url_for('delete_message', message_id=message.id) }}"
+                  onsubmit="return confirm('确定删除这条留言吗？')">
+                <button type="submit" class="btn btn-danger btn-sm">删除</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if messages.pages > 1 %}
+<div class="pagination">
+    {% if messages.has_prev %}
+        <a href="{{ url_for('admin', page=messages.prev_num) }}" class="page-link">← 上一页</a>
+    {% endif %}
+    {% for page_num in messages.iter_pages() %}
+        {% if page_num %}
+            <a href="{{ url_for('admin', page=page_num) }}"
+               class="page-link {{ 'active' if page_num == messages.page else '' }}">{{ page_num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if messages.has_next %}
+        <a href="{{ url_for('admin', page=messages.next_num) }}" class="page-link">下一页 →</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,37 @@
+<!-- profile.html - 个人信息编辑 -->
+{% extends 'base.html' %}
+{% block title %}个人信息 - 校园留言墙{% endblock %}
+{% block content %}
+<div class="form-card">
+    <h2>⚙️ 个人信息</h2>
+    <form method="POST" action="{{ url_for('profile') }}">
+        <div class="form-group">
+            <label>学号</label>
+            <input type="text" value="{{ current_user.student_id }}" readonly>
+            <small style="color: var(--text-light); font-size: 0.8rem;">学号注册后不可修改</small>
+        </div>
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" value="{{ current_user.username }}" readonly>
+        </div>
+        <div class="form-group">
+            <label>昵称（显示用）</label>
+            <input type="text" name="nickname" value="{{ current_user.nickname or '' }}" placeholder="留空则显示用户名">
+        </div>
+        <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" name="email" value="{{ current_user.email }}" required>
+        </div>
+        <div class="form-group" style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">💾 保存修改</button>
+            <a href="{{ url_for('change_password') }}" class="btn btn-outline" style="flex: 1; text-align: center;">🔑 修改密码</a>
+        </div>
+    </form>
+    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+        <p style="font-size: 0.9rem; color: var(--text-light);">
+            共发布 {{ current_user.messages.count() }} 条留言 ·
+            收到 ❤️ {{ current_user.get_likes_received() }} 个赞
+        </p>
+    </div>
+</div>
+{% endblock %}

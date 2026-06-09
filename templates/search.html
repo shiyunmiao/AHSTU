@@ -1,0 +1,63 @@
+<!-- search.html - 搜索页面（简化版，无分页） -->
+{% extends 'base.html' %}
+{% block title %}搜索 - 校园留言墙{% endblock %}
+{% block content %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <form method="GET" action="{{ url_for('search') }}" style="display: flex; gap: 0.5rem;">
+        <input type="text" name="q" value="{{ q }}" placeholder="搜索留言内容、学号、用户名……"
+               style="flex: 1; padding: 0.8rem; border: 2px solid var(--border); border-radius: var(--radius-sm);
+                      background: var(--bg); color: var(--text); font-size: 0.95rem;">
+        <select name="type" style="padding: 0.8rem; border: 2px solid var(--border); border-radius: var(--radius-sm);
+                                   background: var(--bg); color: var(--text); font-size: 0.95rem;">
+            <option value="content" {{ 'selected' if search_type == 'content' else '' }}>搜留言</option>
+            <option value="user" {{ 'selected' if search_type == 'user' else '' }}>搜用户</option>
+        </select>
+        <button type="submit" class="btn btn-primary">🔍 搜索</button>
+    </form>
+</div>
+
+{% if q %}
+    {% if messages|length > 0 %}
+        <p style="margin-bottom: 1rem; color: var(--text-light);">搜索 "{{ q }}" 找到 {{ messages|length }} 条结果</p>
+        {% for message in messages %}
+        <div class="message-card">
+            <div class="message-header">
+                <div class="message-author">
+                    <div class="avatar">{{ (message.author.nickname or message.author.username)[:1] }}</div>
+                    <a href="{{ url_for('user_profile', user_id=message.author.id) }}">{{ message.author.nickname or message.author.username }}</a>
+                </div>
+                <span class="message-time">{{ message.created_at.strftime('%m-%d %H:%M') }}</span>
+            </div>
+            {% if message.title %}<div class="message-title">{{ message.title[:50] }}{% if message.title|length > 50 %}...{% endif %}</div>{% endif %}
+            <div class="message-content">{{ message.content[:200] }}{% if message.content|length > 200 %}...{% endif %}</div>
+            <div class="message-footer">
+                <span>❤️ {{ message.like_count() }}</span>
+                <a href="{{ url_for('message_detail', message_id=message.id) }}" class="detail-link" style="margin-left: auto;">
+                    💬 {{ message.reply_count() }} · 🔗 详情 →
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="card" style="text-align: center; padding: 3rem;">
+        <p style="font-size: 3rem; margin-bottom: 1rem;">🔍</p>
+        <p style="color: var(--text-light);">没有找到与 "{{ q }}" 相关的结果</p>
+    </div>
+    {% endif %}
+{% else %}
+<div class="card" style="text-align: center; padding: 3rem;">
+    <p style="font-size: 3rem; margin-bottom: 1rem;">🔍</p>
+    <p style="color: var(--text-light);">输入关键词搜索留言或用户</p>
+</div>
+{% endif %}
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('show')">
+    <img id="lightboxImg" src="" alt="放大预览">
+</div>
+<script>
+    function openLightbox(src) {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightbox').classList.add('show');
+    }
+</script>
+{% endblock %}

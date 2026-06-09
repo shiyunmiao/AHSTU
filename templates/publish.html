@@ -1,0 +1,166 @@
+<!-- publish.html - 发布留言页（支持上传图片+链接粘贴） -->
+{% extends 'base.html' %}
+{% block title %}发布留言 - 校园留言墙{% endblock %}
+{% block content %}
+
+<div class="publish-page">
+    <div class="publish-header">
+        <a href="{{ url_for('index') }}" class="publish-back" onclick="history.back(); return false;">← 返回</a>
+        <h2>📝 新留言</h2>
+    </div>
+
+    {% if current_user.is_authenticated %}
+    <div class="publish-card">
+        <div class="publish-user">
+            <div class="avatar" style="width: 44px; height: 44px; font-size: 1.2rem;">
+                {{ (current_user.nickname or current_user.username)[:1] }}
+            </div>
+            <div>
+                <div style="font-weight: 600;">{{ current_user.nickname or current_user.username }}</div>
+                <div style="font-size: 0.8rem; color: var(--text-light);">在校园留言墙发言</div>
+            </div>
+        </div>
+
+        <!-- form 必须加 enctype 才能上传文件 -->
+        <form method="POST" action="{{ url_for('publish') }}" enctype="multipart/form-data">
+            <!-- 标题输入 -->
+            <div class="publish-field">
+                <input type="text" name="title" placeholder="输入标题（可选）"
+                       class="publish-title-input"
+                       value="{{ request.form.get('title', '') }}">
+            </div>
+
+            <!-- 正文输入 -->
+            <div class="publish-field">
+                <textarea name="content" placeholder="写下你想说的…" required
+                          oninput="updateCount(this)">{{ request.form.get('content', '') }}</textarea>
+            </div>
+
+            <!-- 图片区域：上传文件 + 粘贴链接 二选一 -->
+            <div class="publish-field">
+                <div class="image-tabs">
+                    <button type="button" class="image-tab active" onclick="switchImageTab('upload', this)">📁 上传图片</button>
+                    <button type="button" class="image-tab" onclick="switchImageTab('url', this)">🔗 粘贴链接</button>
+                </div>
+
+                <!-- 上传文件模式 -->
+                <div id="imageUploadTab" class="image-tab-content">
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" name="image_file" id="imageFileInput"
+                               accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                               onchange="handleFileSelect(this)" style="display: none;">
+                        <div class="upload-placeholder" onclick="document.getElementById('imageFileInput').click()">
+                            <span class="upload-icon">🖼️</span>
+                            <span class="upload-text">点击选择图片文件</span>
+                            <span class="upload-hint">支持 JPG / PNG / GIF / WebP，最大 5MB</span>
+                        </div>
+                        <div id="filePreview" style="display: none; position: relative;">
+                            <img id="filePreviewImg" src="" alt="预览"
+                                 style="max-width: 100%; max-height: 250px; border-radius: var(--radius-sm);">
+                            <button type="button" class="btn btn-danger btn-sm"
+                                    style="position: absolute; top: 0.5rem; right: 0.5rem;"
+                                    onclick="removeFile()">✕ 移除</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 粘贴链接模式 -->
+                <div id="imageUrlTab" class="image-tab-content" style="display: none;">
+                    <div class="image-url-row">
+                        <input type="text" name="image_url" placeholder="粘贴图片网址（可选）"
+                               class="publish-url-input"
+                               value="{{ request.form.get('image_url', '') }}"
+                               oninput="previewUrl(this)">
+                        <button type="button" class="btn btn-outline btn-sm"
+                                onclick="previewUrl(document.querySelector('.publish-url-input'))">预览</button>
+                    </div>
+                    <div id="urlPreview" style="display: none; margin-top: 0.5rem;">
+                        <img src="" alt="预览" style="max-width: 100%; max-height: 250px; border-radius: var(--radius-sm);">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作栏 -->
+            <div class="publish-actions">
+                <span class="char-count">
+                    <span id="charCount">0</span>/5000
+                </span>
+                <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 1rem;">
+                    📤 发布
+                </button>
+            </div>
+        </form>
+
+        <div class="publish-tips">
+            <p>💡 文明发言 · 可从电脑上传图片或粘贴链接 · 按 <kbd>Esc</kbd> 快速返回</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="publish-card" style="text-align: center; padding: 3rem;">
+        <p style="font-size: 3rem; margin-bottom: 1rem;">🔐</p>
+        <p style="font-size: 1.1rem; margin-bottom: 1rem;">请先登录后再发布留言</p>
+        <a href="{{ url_for('login') }}" class="btn btn-primary">去登录</a>
+        <a href="{{ url_for('register') }}" class="btn btn-outline" style="margin-left: 0.5rem;">去注册</a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // ---- 字数统计 ----
+    function updateCount(textarea) {
+        document.getElementById('charCount').textContent = textarea.value.length;
+    }
+
+    // ---- 切换图片输入方式 ----
+    function switchImageTab(tab, btn) {
+        // 切换标签高亮
+        document.querySelectorAll('.image-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        // 切换内容面板
+        document.getElementById('imageUploadTab').style.display = tab === 'upload' ? 'block' : 'none';
+        document.getElementById('imageUrlTab').style.display = tab === 'url' ? 'block' : 'none';
+    }
+
+    // ---- 选择文件预览 ----
+    function handleFileSelect(input) {
+        var file = input.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var placeholder = document.querySelector('.upload-placeholder');
+            var preview = document.getElementById('filePreview');
+            var img = document.getElementById('filePreviewImg');
+            placeholder.style.display = 'none';
+            img.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // ---- 移除已选文件 ----
+    function removeFile() {
+        document.getElementById('imageFileInput').value = '';
+        document.querySelector('.upload-placeholder').style.display = 'flex';
+        document.getElementById('filePreview').style.display = 'none';
+    }
+
+    // ---- 链接预览 ----
+    function previewUrl(input) {
+        var url = input.value.trim();
+        var preview = document.getElementById('urlPreview');
+        var img = preview.querySelector('img');
+        if (url) {
+            img.src = url;
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    // ---- 页面加载时初始化 ----
+    document.addEventListener('DOMContentLoaded', function() {
+        var ta = document.querySelector('.publish-card textarea');
+        if (ta) updateCount(ta);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,7 @@
+# requirements.txt - 部署用（加了 gunicorn 和 python-dotenv）
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+pg8000==1.31.2
+gunicorn==21.2.0
+python-dotenv==1.0.0
