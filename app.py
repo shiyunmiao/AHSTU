@@ -2,6 +2,7 @@
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, jsonify, send_from_directory, session)
 import os
+import base64
 import random
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -74,18 +75,20 @@ def publish():
         content = request.form.get('content', '').strip()
         image_url = request.form.get('image_url', '').strip()
 
-        # 处理文件上传（如果用户选了文件）
+        # 处理文件上传（存为 base64，不依赖临时文件）
         file = request.files.get('image_file')
         if file and file.filename:
             ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
-            if ext in ALLOWED_EXTENSIONS:
+            if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
                 try:
-                    filename = secure_filename(f'{datetime.now().strftime("%Y%m%d%H%M%S")}_{file.filename}')
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(filepath)
-                    image_url = url_for('uploaded_file', filename=filename)
+                    file_data = file.read()
+                    if len(file_data) > 500 * 1024:  # 500KB 限制
+                        flash('图片不能超过 500KB')
+                        return redirect(url_for('publish'))
+                    b64 = base64.b64encode(file_data).decode('utf-8')
+                    image_url = f'data:image/{ext};base64,{b64}'
                 except Exception:
-                    flash('图片上传失败，请重试')
+                    flash('图片处理失败，请重试')
                     return redirect(url_for('publish'))
             else:
                 flash('不支持的文件格式，请上传图片文件')
@@ -224,36 +227,20 @@ def profile():
                 return redirect(url_for('profile'))
             current_user.email = email
 
-        # 处理头像上传（带严格限制）
+        # 处理头像上传（存为 base64）
         avatar_file = request.files.get('avatar')
         if avatar_file and avatar_file.filename:
-            # 检查文件大小（限制 2MB）
-            avatar_file.seek(0, 2)  # 跳到文件末尾
-            file_size = avatar_file.tell()
-            avatar_file.seek(0)  # 回到开头
-            if file_size > 2 * 1024 * 1024:
-                flash('头像文件不能超过 2MB')
-                return redirect(url_for('profile'))
-            # 检查文件类型
             ext = avatar_file.filename.rsplit('.', 1)[-1].lower() if '.' in avatar_file.filename else ''
             if ext not in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
                 flash('不支持的头像格式，请上传 JPG/PNG/GIF/WebP 图片')
                 return redirect(url_for('profile'))
             try:
-                filename = f'avatar_{current_user.id}_{datetime.now().strftime("%Y%m%d%H%M%S")}.{ext}'
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                avatar_file.save(filepath)
-                # 删除旧头像（忽略错误）
-                if current_user.avatar_url:
-                    old_fn = current_user.avatar_url.rsplit('/', 1)[-1]
-                    old_fp = os.path.join(app.config['UPLOAD_FOLDER'], old_fn)
-                    try:
-                        if os.path.exists(old_fp):
-                            os.remove(old_fp)
-                    except Exception:
-                        pass
-                current_user.avatar_url = url_for('uploaded_file', filename=filename)
+                file_data = avatar_file.read()
+                if len(file_data) > 500 * 1024:  # 500KB
+                    flash('头像不能超过 500KB')
+                    return redirect(url_for('profile'))
+                b64 = base64.b64encode(file_data).decode('utf-8')
+                current_user.avatar_url = f'data:image/{ext};base64,{b64}'
                 flash('头像已更新 ✅')
             except Exception:
                 flash('头像上传失败，请重试')
@@ -466,6 +453,13 @@ with app.app_context():
         db.session.commit()
     except Exception:
         db.session.rollback()  # 列可能已存在
+    # 迁移：image_url / avatar_url 改为 TEXT（支持 base64）
+    for tbl, col in [('messages', 'image_url'), ('users', 'avatar_url')]:
+        try:
+            db.session.execute(sa_text(f'ALTER TABLE {tbl} ALTER COLUMN {col} TYPE TEXT'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     if not User.query.filter_by(username='admin').first():
         admin = User(
             student_id='00000000', username='admin',

@@ -16,7 +16,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), nullable=True)                      # 邮箱（注册时不再必填）
     password_hash = db.Column(db.String(255), nullable=False)            # 密码哈希
     nickname = db.Column(db.String(50), default='')                      # 昵称
-    avatar_url = db.Column(db.String(255), default='')                   # 头像
+    avatar_url = db.Column(db.Text, default='')                           # 头像（支持 base64）
     created_at = db.Column(db.DateTime, default=datetime.utcnow)         # 注册时间
     is_admin = db.Column(db.Boolean, default=False)                      # 是否管理员
 
@@ -39,7 +39,7 @@ class Message(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     title = db.Column(db.String(200), default='')       # 留言标题
     content = db.Column(db.Text, nullable=False)        # 留言正文
-    image_url = db.Column(db.String(500), default='')   # 图片链接
+    image_url = db.Column(db.Text, default='')           # 图片链接（支持 base64）
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_pinned = db.Column(db.Boolean, default=False)
