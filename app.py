@@ -206,7 +206,7 @@ def user_profile(user_id):
                           messages=messages, likes_received=likes_received)
 
 
-# ─── 4.7 个人信息编辑 ───
+# ─── 4.7 个人信息编辑（含头像上传） ───
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
@@ -221,6 +221,26 @@ def profile():
                 flash('该邮箱已被其他用户使用')
                 return redirect(url_for('profile'))
             current_user.email = email
+
+        # 处理头像上传
+        avatar_file = request.files.get('avatar')
+        if avatar_file and avatar_file.filename:
+            ext = avatar_file.filename.rsplit('.', 1)[-1].lower() if '.' in avatar_file.filename else ''
+            if ext in ALLOWED_EXTENSIONS:
+                filename = secure_filename(f'avatar_{current_user.id}_{datetime.now().strftime("%Y%m%d%H%M%S")}.{ext}')
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                avatar_file.save(filepath)
+                # 删除旧头像文件
+                if current_user.avatar_url:
+                    old_path = os.path.join(app.config['UPLOAD_FOLDER'],
+                                            current_user.avatar_url.rsplit('/', 1)[-1])
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+                current_user.avatar_url = url_for('uploaded_file', filename=filename)
+            else:
+                flash('不支持的头像格式，请上传 JPG/PNG/GIF/WebP 图片')
+                return render_template('profile.html')
+
         db.session.commit()
         flash('个人信息已更新')
         return redirect(url_for('profile'))

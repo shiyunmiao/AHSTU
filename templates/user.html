@@ -3,9 +3,14 @@
 {% block title %}{{ profile_user.nickname or profile_user.username }} - 校园留言墙{% endblock %}
 {% block content %}
 <div class="card" style="text-align: center; padding: 2rem;">
+    {% if profile_user.avatar_url %}
+    <img src="{{ profile_user.avatar_url }}" alt="头像"
+         style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 1rem; border: 3px solid var(--primary); box-shadow: 0 4px 15px rgba(91,124,250,0.3); display: block;">
+    {% else %}
     <div class="avatar" style="width: 80px; height: 80px; font-size: 2rem; margin: 0 auto 1rem;">
         {{ (profile_user.nickname or profile_user.username)[:1] }}
     </div>
+    {% endif %}
     <h2>{{ profile_user.nickname or profile_user.username }}</h2>
     <p style="color: var(--text-light);">
         学号: {{ profile_user.student_id }} ·

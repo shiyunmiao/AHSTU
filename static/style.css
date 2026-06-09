@@ -386,6 +386,22 @@ body::after {
     transform: scale(1.05);
 }
 
+/* 头像图片（替换渐变圆形） */
+.avatar-img {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--card-border);
+    flex-shrink: 0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.avatar-img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(91, 124, 250, 0.25);
+}
+
 .message-author a {
     font-weight: 600;
     color: var(--text);
