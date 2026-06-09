@@ -82,7 +82,7 @@ def publish():
             if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
                 try:
                     file_data = file.read()
-                    if len(file_data) > 500 * 1024:  # 500KB 限制
+                    if len(file_data) > 5 * 1024 * 1024:  # 5MB 限制
                         flash('图片不能超过 500KB')
                         return redirect(url_for('publish'))
                     b64 = base64.b64encode(file_data).decode('utf-8')
@@ -236,7 +236,7 @@ def profile():
                 return redirect(url_for('profile'))
             try:
                 file_data = avatar_file.read()
-                if len(file_data) > 500 * 1024:  # 500KB
+                if len(file_data) > 5 * 1024 * 1024:  # 5MB
                     flash('头像不能超过 500KB')
                     return redirect(url_for('profile'))
                 b64 = base64.b64encode(file_data).decode('utf-8')
