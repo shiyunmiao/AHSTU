@@ -110,6 +110,7 @@
     {% endif %}
 </div>
 
+<script src="{{ url_for('static', filename='compress.js') }}"></script>
 <script>
     // ---- 字数统计 ----
     function updateCount(textarea) {
@@ -126,20 +127,28 @@
         document.getElementById('imageUrlTab').style.display = tab === 'url' ? 'block' : 'none';
     }
 
-    // ---- 选择文件预览 ----
+    // ---- 选择文件预览（自动压缩） ----
     function handleFileSelect(input) {
         var file = input.files[0];
         if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var placeholder = document.querySelector('.upload-placeholder');
-            var preview = document.getElementById('filePreview');
-            var img = document.getElementById('filePreviewImg');
-            placeholder.style.display = 'none';
-            img.src = e.target.result;
-            preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
+        compressImage(file, 1200, 0.85, function(compressed) {
+            // 用压缩后的文件替换 input
+            var dt = new DataTransfer();
+            dt.items.add(compressed);
+            input.files = dt.files;
+
+            // 预览（显示原始文件，更快）
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var placeholder = document.querySelector('.upload-placeholder');
+                var preview = document.getElementById('filePreview');
+                var img = document.getElementById('filePreviewImg');
+                placeholder.style.display = 'none';
+                img.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(compressed);
+        });
     }
 
     // ---- 移除已选文件 ----

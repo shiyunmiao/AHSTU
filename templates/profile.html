@@ -37,7 +37,8 @@
         </div>
         <div class="form-group">
             <label>更换头像</label>
-            <input type="file" name="avatar" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+            <input type="file" name="avatar" id="avatarInput" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                   onchange="compressAvatar(this)"
                    style="width: 100%; padding: 0.5rem; border: 2px solid var(--border); border-radius: var(--radius-sm); background: rgba(255,255,255,0.5); color: var(--text); font-size: 0.9rem; font-family: inherit;">
             <small style="color: var(--text-light); font-size: 0.8rem;">支持 JPG / PNG / GIF / WebP，建议 200x200 以上</small>
         </div>
@@ -53,4 +54,17 @@
         </p>
     </div>
 </div>
+
+<script src="{{ url_for('static', filename='compress.js') }}"></script>
+<script>
+function compressAvatar(input) {
+    var file = input.files[0];
+    if (!file) return;
+    compressImage(file, 400, 0.8, function(compressed) {
+        var dt = new DataTransfer();
+        dt.items.add(compressed);
+        input.files = dt.files;
+    });
+}
+</script>
 {% endblock %}
