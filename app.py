@@ -308,7 +308,10 @@ def message_detail(message_id):
 @app.route('/message/<int:message_id>/delete', methods=['POST'])
 @login_required
 def delete_message(message_id):
-    message = Message.query.get_or_404(message_id)
+    message = Message.query.get(message_id)
+    if not message:
+        flash('该留言已删除')
+        return redirect(url_for('index'))
     if message.user_id != current_user.id and not current_user.is_admin:
         flash('你没有权限删除此留言')
         return redirect(url_for('index'))
@@ -322,7 +325,10 @@ def delete_message(message_id):
 @app.route('/reply/<int:reply_id>/delete', methods=['POST'])
 @login_required
 def delete_reply(reply_id):
-    reply = Reply.query.get_or_404(reply_id)
+    reply = Reply.query.get(reply_id)
+    if not reply:
+        flash('该回复已删除')
+        return redirect(url_for('index'))
     if reply.user_id != current_user.id and not current_user.is_admin:
         flash('你没有权限删除此回复')
         return redirect(url_for('message_detail', message_id=reply.message_id))
