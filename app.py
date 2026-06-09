@@ -109,11 +109,13 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
-    # 生成验证码
-    num1 = random.randint(1, 20)
-    num2 = random.randint(1, 10)
-    session['captcha_answer'] = num1 + num2
-    captcha_text = f'{num1} + {num2} = ?'
+    # 生成验证码（只在 GET 时刷新，POST 时用 session 里已有的）
+    if request.method == 'GET':
+        num1 = random.randint(1, 20)
+        num2 = random.randint(1, 10)
+        session['captcha_answer'] = num1 + num2
+        session['captcha_text'] = f'{num1} + {num2} = ?'
+    captcha_text = session.get('captcha_text', '1 + 1 = ?')
 
     if request.method == 'POST':
         student_id = request.form.get('student_id', '').strip()
@@ -148,6 +150,8 @@ def register():
         db.session.add(user)
         db.session.commit()
         login_user(user)
+        session.pop('captcha_answer', None)
+        session.pop('captcha_text', None)
         flash('注册成功！欢迎加入校园留言墙')
         return redirect(url_for('index'))
 
