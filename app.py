@@ -401,6 +401,18 @@ def init_db():
 # ─── 生产启动时自动创建表 + 默认管理员（gunicorn 也会执行） ───
 with app.app_context():
     db.create_all()
+    # 迁移：email 列改为可选（兼容旧表结构）
+    try:
+        from sqlalchemy import text as sa_text
+        db.session.execute(sa_text('ALTER TABLE users ALTER COLUMN email DROP NOT NULL'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()  # 列可能已经是 nullable 了
+    try:
+        db.session.execute(sa_text('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key'))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     if not User.query.filter_by(username='admin').first():
         admin = User(
             student_id='00000000', username='admin',
