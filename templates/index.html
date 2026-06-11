@@ -38,7 +38,7 @@
                 <img src="{{ message.image_url }}" alt="配图" onclick="openLightbox(this.src)">
             </div>
             {% endif %}
-            <div class="message-content">{{ message.content[:300] }}{% if message.content|length > 300 %}…{% endif %}</div>
+            <div class="message-content">{{ message.content[:100] }}{% if message.content|length > 100 %}…{% endif %}</div>
             <div class="message-footer" onclick="event.stopPropagation();">
                 <button class="like-btn {{ 'liked' if message.is_liked_by(current_user) else '' }}"
                         onclick="toggleLike({{ message.id }}, this)">
