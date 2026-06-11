@@ -4,6 +4,8 @@ from flask import (Flask, render_template, request, redirect, url_for,
 import os
 import base64
 import random
+import gzip
+from io import BytesIO
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from flask_login import (LoginManager, login_user, logout_user,
@@ -13,6 +15,28 @@ from config import Config
 from models import db, User, Message, Reply, Like
 
 app = Flask(__name__)
+
+# ─── gzip 压缩（大幅减小页面体积） ───
+from flask import request as _req
+@app.after_request
+def gzip_response(response):
+    accept = _req.headers.get('Accept-Encoding', '')
+    if 'gzip' not in accept or response.status_code >= 300:
+        return response
+    if response.content_length and response.content_length < 200:
+        return response
+    if response.content_type and 'text' not in response.content_type and 'json' not in response.content_type and 'javascript' not in response.content_type:
+        return response
+    try:
+        buf = BytesIO()
+        with gzip.GzipFile(mode='wb', fileobj=buf) as f:
+            f.write(response.get_data())
+        response.set_data(buf.getvalue())
+        response.headers['Content-Encoding'] = 'gzip'
+        response.headers['Content-Length'] = len(response.get_data())
+    except Exception:
+        pass
+    return response
 app.config.from_object(Config)
 db.init_app(app)
 
@@ -54,12 +78,12 @@ def index():
             Message.is_pinned.desc(),
             func.count(Like.id).desc(),
             Message.created_at.desc()
-        ).limit(100).all()
+        ).limit(20).all()
     else:
         messages = Message.query.order_by(
             Message.is_pinned.desc(),
             Message.created_at.desc()
-        ).limit(100).all()
+        ).limit(20).all()
 
     return render_template('index.html', messages=messages, sort=sort)
 
@@ -436,7 +460,7 @@ def init_db():
         )
         db.session.add(admin)
         db.session.commit()
-        print('✓ 默认管理员已创建（admin / admin123）')
+        print('[OK] 默认管理员已创建（admin / admin123）')
 
 
 # ─── 生产启动时自动创建表 + 默认管理员（gunicorn 也会执行） ───
@@ -475,7 +499,7 @@ with app.app_context():
         )
         db.session.add(admin)
         db.session.commit()
-        print('✓ 默认管理员已创建（admin / admin123）')
+        print('[OK] 默认管理员已创建（admin / admin123）')
 
 if __name__ == '__main__':
     # 本地开发用 debug 模式，部署时通过环境变量控制
