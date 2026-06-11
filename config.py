@@ -5,8 +5,7 @@ class Config:
     """所有配置项集中在这里"""
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-    # 数据库连接：优先读环境变量，没有则用 Remote Railway PostgreSQL
-    # 本地开发时请设置环境变量 DATABASE_URL=postgresql+pg8000://postgres:admin@localhost/message_board
+    # 数据库连接：优先读环境变量，没有则用 Railway 远程数据库
     raw_url = (
         os.environ.get('DATABASE_PUBLIC_URL')
         or os.environ.get('DATABASE_URL')
